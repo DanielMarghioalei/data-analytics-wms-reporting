@@ -1,0 +1,822 @@
+--Purpose of the report:
+--1. Present to business 5 attachements with the summary based on part types
+--2. Part type to be determined based on the item number
+--3. Reports are already pivoted (totals included), thus no need to train staff on Excel Pivots
+--4. Reports run for a specific date range (typically yesterday 00:00 till yesterday 23:59)
+
+--Assumptions:
+--1. Max pallet qty is 24, although at places can be 12, 16, etc as well based on the item size
+--2. Any lists for less than the qty against the item footprints for Pallet qty will be treated as less than a pallet
+--3. Work assignment rules are configured to have break values equal to the pallet qty for the item number (normally at a part family level - XYZ part family has qty of 18 for Pallet UOM)
+
+[select trunc(sysdate -6) run_from_date,
+        trunc(sysdate) run_till_date,
+        to_char(sysdate -6, 'dd.mm.yyyy') from_date,
+        to_char(sysdate, 'dd.mm.yyyy') till_date
+   from dual]
+|
+[SELECT adrnam,
+        part_type,
+        pallet_qty,
+        untpal,
+        CASE WHEN COALESCE(SUM("1"), null) = 0 THEN null
+             ELSE COALESCE(SUM("1"), null)
+        END AS qty_1,
+        CASE WHEN COALESCE(SUM("2"), null) = 0 THEN null
+             ELSE COALESCE(SUM("2"), null)
+        END AS qty_2,
+        CASE WHEN COALESCE(SUM("3"), null) = 0 THEN null
+             ELSE COALESCE(SUM("3"), null)
+        END AS qty_3,
+        CASE WHEN COALESCE(SUM("4"), null) = 0 THEN null
+             ELSE COALESCE(SUM("4"), null)
+        END AS qty_4,
+        CASE WHEN COALESCE(SUM("5"), null) = 0 THEN null
+             ELSE COALESCE(SUM("5"), null)
+        END AS qty_5,
+        CASE WHEN COALESCE(SUM("6"), null) = 0 THEN null
+             ELSE COALESCE(SUM("6"), null)
+        END AS qty_6,
+        CASE WHEN COALESCE(SUM("7"), null) = 0 THEN null
+             ELSE COALESCE(SUM("7"), null)
+        END AS qty_7,
+        CASE WHEN COALESCE(SUM("8"), null) = 0 THEN null
+             ELSE COALESCE(SUM("8"), null)
+        END AS qty_8,
+        CASE WHEN COALESCE(SUM("9"), null) = 0 THEN null
+             ELSE COALESCE(SUM("9"), null)
+        END AS qty_9,
+        CASE WHEN COALESCE(SUM("10"), null) = 0 THEN null
+             ELSE COALESCE(SUM("10"), null)
+        END AS qty_10,
+        CASE WHEN COALESCE(SUM("11"), null) = 0 THEN null
+             ELSE COALESCE(SUM("11"), null)
+        END AS qty_11,
+        CASE WHEN COALESCE(SUM("12"), null) = 0 THEN null
+             ELSE COALESCE(SUM("12"), null)
+        END AS qty_12,
+        CASE WHEN COALESCE(SUM("13"), null) = 0 THEN null
+             ELSE COALESCE(SUM("13"), null)
+        END AS qty_13,
+        CASE WHEN COALESCE(SUM("14"), null) = 0 THEN null
+             ELSE COALESCE(SUM("14"), null)
+        END AS qty_14,
+        CASE WHEN COALESCE(SUM("15"), null) = 0 THEN null
+             ELSE COALESCE(SUM("15"), null)
+        END AS qty_15,
+        CASE WHEN COALESCE(SUM("16"), null) = 0 THEN null
+             ELSE COALESCE(SUM("16"), null)
+        END AS qty_16,
+        CASE WHEN COALESCE(SUM("17"), null) = 0 THEN null
+             ELSE COALESCE(SUM("17"), null)
+        END AS qty_17,
+        CASE WHEN COALESCE(SUM("18"), null) = 0 THEN null
+             ELSE COALESCE(SUM("18"), null)
+        END AS qty_18,
+        CASE WHEN COALESCE(SUM("19"), null) = 0 THEN null
+             ELSE COALESCE(SUM("19"), null)
+        END AS qty_19,
+        CASE WHEN COALESCE(SUM("20"), null) = 0 THEN null
+             ELSE COALESCE(SUM("20"), null)
+        END AS qty_20,
+        CASE WHEN COALESCE(SUM("21"), null) = 0 THEN null
+             ELSE COALESCE(SUM("21"), null)
+        END AS qty_21,
+        CASE WHEN COALESCE(SUM("22"), null) = 0 THEN null
+             ELSE COALESCE(SUM("22"), null)
+        END AS qty_22,
+        CASE WHEN COALESCE(SUM("23"), null) = 0 THEN null
+             ELSE COALESCE(SUM("23"), null)
+        END AS qty_23,
+        CASE WHEN COALESCE(SUM("24"), null) = 0 THEN null
+             ELSE COALESCE(SUM("24"), null)
+        END AS qty_24
+   FROM (SELECT schbat,
+                list_id,
+                prtnum,
+                srcloc,
+                oprcod,
+                pcksts,
+                pckqty,
+                pckqty units_picked,
+                adrnam,
+                untpal,
+                CASE WHEN (PRTNUM LIKE '%identifier1%' OR PRTNUM LIKE '%identifier2%' OR PRTNUM LIKE '%identifier3%') THEN 'type1'
+                     WHEN (PRTNUM LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type2'
+                     WHEN (PRTNUM not LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type3'
+                     ELSE 'UNKNOWN'
+                END AS part_type,
+                CASE WHEN pick_type = 'Pallet Pick' THEN 'Full Pallet'
+                     ELSE 'Less than a Pallet'
+                END AS pallet_qty
+           FROM (SELECT pckwrk_view.schbat,
+                        pckwrk_view.list_id,
+                        pckwrk_view.prtnum,
+                        pckwrk_view.srcloc,
+                        pckwrk_view.oprcod,
+                        pckwrk_view.pcksts,
+                        adrmst.adrnam,
+                        SUM(pckwrk_view.pckqty) AS pckqty,
+                        pckwrk_view_group.picks_per_list,
+                        prtftp_view.untpal,
+                        CASE WHEN pckwrk_view_group.picks_per_list < prtftp_view.untpal THEN 'Each Pick'
+                             WHEN pckwrk_view_group.picks_per_list = prtftp_view.untpal THEN 'Pallet Pick'
+                             ELSE 'Unknown Pick Type'
+                             -- Added ELSE clause
+
+                        END AS pick_type
+                   FROM pckwrk_view
+                   LEFT
+                   JOIN prtftp_view
+                     ON pckwrk_view.wh_id = prtftp_view.wh_id
+                    AND pckwrk_view.prtnum = prtftp_view.prtnum
+                    AND pckwrk_view.prt_client_id = prtftp_view.prt_client_id
+                   LEFT
+                   JOIN prtmst
+                     ON prtftp_view.prtnum = prtmst.prtnum
+                    AND prtftp_view.wh_id = prtmst.wh_id_tmpl
+                    AND prtftp_view.prt_client_id = prtmst.prt_client_id
+                   LEFT
+                   JOIN prtfam
+                     ON prtmst.prtfam = prtfam.prtfam
+                   left
+                   join cstmst
+                     on pckwrk_view.rtcust = cstmst.cstnum
+                   left
+                   join adrmst
+                     on cstmst.adr_id = adrmst.adr_id
+                   LEFT OUTER
+                   JOIN (SELECT wh_id,
+                                client_id,
+                                schbat,
+                                prtnum,
+                                srcloc,
+                                list_id,
+                                MIN(adddte) AS list_created,
+                                MIN(last_upd_dt) AS list_started,
+                                MAX(last_upd_dt) AS list_completed,
+                                SUM(pckqty) AS picks_per_list
+                           FROM pckwrk_view
+                          WHERE wrktyp = 'P'
+                            AND adddte >= @run_from_date
+                            AND adddte <= @run_till_date
+                            AND wh_id = 'wh_id_identifier'
+                          GROUP BY wh_id,
+                                client_id,
+                                schbat,
+                                prtnum,
+                                srcloc,
+                                list_id) pckwrk_view_group
+                     ON pckwrk_view.client_id = pckwrk_view_group.client_id
+                    AND pckwrk_view.wh_id = pckwrk_view_group.wh_id
+                    AND pckwrk_view.schbat = pckwrk_view_group.schbat
+                    AND pckwrk_view.prtnum = pckwrk_view_group.prtnum
+                    AND pckwrk_view.srcloc = pckwrk_view_group.srcloc
+                    AND pckwrk_view.list_id = pckwrk_view_group.list_id
+                  WHERE pckwrk_view.wrktyp = 'P'
+                    AND pckwrk_view.adddte >= @run_from_date
+                    AND pckwrk_view.adddte <= @run_till_date
+                    AND pckwrk_view.wh_id = 'wh_id_identifier'
+                    AND prtfam.prtfamgrp = 'part_family_group_identifier'
+                  GROUP BY pckwrk_view.schbat,
+                        pckwrk_view.list_id,
+                        pckwrk_view.prtnum,
+                        pckwrk_view.srcloc,
+                        pckwrk_view.oprcod,
+                        pckwrk_view.pcksts,
+                        adrmst.adrnam,
+                        pckwrk_view_group.picks_per_list,
+                        prtftp_view.untpal))
+  PIVOT (COUNT(list_id) FOR pckqty IN ('1' AS "1", '2' AS "2", '3' AS "3", '4' AS "4", '5' AS "5", '6' AS "6", '7' AS "7", '8' AS "8", '9' AS "9", '10' AS "10", '11' AS "11", '12' AS "12", '13' AS "13", '14' AS "14", '15' AS "15", '16' AS "16", '17' AS "17", '18' AS "18", '19' AS "19", '20' AS "20", '21' AS "21", '22' AS "22", '23' AS "23", '24' AS "24"))
+  group by adrnam,
+        part_type,
+        pallet_qty,
+        untpal
+  order by 1,
+        2,
+        4,
+        3] >> Detailed_Breakdown
+|
+[with main_query as (SELECT NVL(part_type, 'TOTAL') part_type,
+                            NVL(pallet_QTY, '--------') pallet_QTY,
+                            units_picked
+                       FROM (select part_type,
+                                    pallet_QTY,
+                                    sum(units_picked) units_picked
+                               from (SELECT schbat,
+                                            list_id,
+                                            prtnum,
+                                            srcloc,
+                                            oprcod,
+                                            pcksts,
+                                            pckqty,
+                                            pckqty units_picked,
+                                            adrnam,
+                                            untpal,
+                                            CASE WHEN (PRTNUM LIKE '%identifier1%' OR PRTNUM LIKE '%identifier2%' OR PRTNUM LIKE '%identifier3%') THEN 'type1'
+                                                 WHEN (PRTNUM LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type2'
+                                                 WHEN (PRTNUM not LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type3'
+                                                 ELSE 'UNKNOWN'
+                                            END AS part_type,
+                                            CASE WHEN pick_type = 'Pallet Pick' THEN 'Full Pallet'
+                                                 ELSE 'Less than a Pallet'
+                                            END AS pallet_qty
+                                       FROM (SELECT pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    SUM(pckwrk_view.pckqty) AS pckqty,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal,
+                                                    CASE WHEN pckwrk_view_group.picks_per_list < prtftp_view.untpal THEN 'Each Pick'
+                                                         WHEN pckwrk_view_group.picks_per_list = prtftp_view.untpal THEN 'Pallet Pick'
+                                                         ELSE 'Unknown Pick Type'
+                                                         -- Added ELSE clause
+
+                                                    END AS pick_type
+                                               FROM pckwrk_view
+                                               LEFT
+                                               JOIN prtftp_view
+                                                 ON pckwrk_view.wh_id = prtftp_view.wh_id
+                                                AND pckwrk_view.prtnum = prtftp_view.prtnum
+                                                AND pckwrk_view.prt_client_id = prtftp_view.prt_client_id
+                                               LEFT
+                                               JOIN prtmst
+                                                 ON prtftp_view.prtnum = prtmst.prtnum
+                                                AND prtftp_view.wh_id = prtmst.wh_id_tmpl
+                                                AND prtftp_view.prt_client_id = prtmst.prt_client_id
+                                               LEFT
+                                               JOIN prtfam
+                                                 ON prtmst.prtfam = prtfam.prtfam
+                                               left
+                                               join cstmst
+                                                 on pckwrk_view.rtcust = cstmst.cstnum
+                                               left
+                                               join adrmst
+                                                 on cstmst.adr_id = adrmst.adr_id
+                                               LEFT OUTER
+                                               JOIN (SELECT wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id,
+                                                            MIN(adddte) AS list_created,
+                                                            MIN(last_upd_dt) AS list_started,
+                                                            MAX(last_upd_dt) AS list_completed,
+                                                            SUM(pckqty) AS picks_per_list
+                                                       FROM pckwrk_view
+                                                      WHERE wrktyp = 'P'
+                                                        AND adddte >= @run_from_date
+                                                        AND adddte <= @run_till_date
+                                                        AND wh_id = 'wh_id_identifier'
+                                                      GROUP BY wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id) pckwrk_view_group
+                                                 ON pckwrk_view.client_id = pckwrk_view_group.client_id
+                                                AND pckwrk_view.wh_id = pckwrk_view_group.wh_id
+                                                AND pckwrk_view.schbat = pckwrk_view_group.schbat
+                                                AND pckwrk_view.prtnum = pckwrk_view_group.prtnum
+                                                AND pckwrk_view.srcloc = pckwrk_view_group.srcloc
+                                                AND pckwrk_view.list_id = pckwrk_view_group.list_id
+                                              WHERE pckwrk_view.wrktyp = 'P'
+                                                AND pckwrk_view.adddte >= @run_from_date
+                                                AND pckwrk_view.adddte <= @run_till_date
+                                                AND pckwrk_view.wh_id = 'wh_id_identifier'
+                                                AND prtfam.prtfamgrp = 'part_family_group_identifier'
+                                              GROUP BY pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal)
+                                      order by 1,
+                                            2,
+                                            4,
+                                            3)
+                              WHERE PART_TYPE = 'type3'
+                              group by GROUPING SETS((part_type, pallet_QTY), ('TOTAL')))
+                      ORDER BY 1 ASC)
+ select part_type,
+        pallet_qty,
+        units_picked
+   from (SELECT case when pallet_qty = '--------' then 2
+                     else 1
+                end as sort_by_clause,
+                PART_TYPE,
+                PALLET_QTY,
+                UNITS_PICKED || ' ' as units_picked
+           FROM MAIN_QUERY
+          WHERE PALLET_QTY IN ('Full Pallet', 'Less than a Pallet', '--------')
+         UNION
+         SELECT 3 AS SORT_BY_CLAUSE,
+                MQ1.PART_TYPE,
+                MQ1.PALLET_QTY,
+                round(MQ1.UNITS_PICKED*100 / mq2.units_picked, 3) || ' %' units_picked
+           FROM MAIN_QUERY MQ1,
+                MAIN_QUERY MQ2
+          WHERE mq1.part_type <> mq2.part_type
+            and mq1.part_type = 'type3'
+            and mq2.part_type = 'TOTAL'
+            AND mq1.PALLET_QTY IN ('Full Pallet', 'Less than a Pallet'))
+  order by 1,
+        2] >> type3_Summary
+|
+[with main_query as (SELECT NVL(part_type, 'TOTAL') part_type,
+                            NVL(pallet_QTY, '--------') pallet_QTY,
+                            units_picked
+                       FROM (select part_type,
+                                    pallet_QTY,
+                                    sum(units_picked) units_picked
+                               from (SELECT schbat,
+                                            list_id,
+                                            prtnum,
+                                            srcloc,
+                                            oprcod,
+                                            pcksts,
+                                            pckqty,
+                                            pckqty units_picked,
+                                            adrnam,
+                                            untpal,
+                                            CASE WHEN (PRTNUM LIKE '%identifier1%' OR PRTNUM LIKE '%identifier2%' OR PRTNUM LIKE '%identifier3%') THEN 'type1'
+                                                 WHEN (PRTNUM LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type2'
+                                                 WHEN (PRTNUM not LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type3'
+                                                 ELSE 'UNKNOWN'
+                                            END AS part_type,
+                                            CASE WHEN pick_type = 'Pallet Pick' THEN 'Full Pallet'
+                                                 ELSE 'Less than a Pallet'
+                                            END AS pallet_qty
+                                       FROM (SELECT pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    SUM(pckwrk_view.pckqty) AS pckqty,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal,
+                                                    CASE WHEN pckwrk_view_group.picks_per_list < prtftp_view.untpal THEN 'Each Pick'
+                                                         WHEN pckwrk_view_group.picks_per_list = prtftp_view.untpal THEN 'Pallet Pick'
+                                                         ELSE 'Unknown Pick Type'
+                                                         -- Added ELSE clause
+
+                                                    END AS pick_type
+                                               FROM pckwrk_view
+                                               LEFT
+                                               JOIN prtftp_view
+                                                 ON pckwrk_view.wh_id = prtftp_view.wh_id
+                                                AND pckwrk_view.prtnum = prtftp_view.prtnum
+                                                AND pckwrk_view.prt_client_id = prtftp_view.prt_client_id
+                                               LEFT
+                                               JOIN prtmst
+                                                 ON prtftp_view.prtnum = prtmst.prtnum
+                                                AND prtftp_view.wh_id = prtmst.wh_id_tmpl
+                                                AND prtftp_view.prt_client_id = prtmst.prt_client_id
+                                               LEFT
+                                               JOIN prtfam
+                                                 ON prtmst.prtfam = prtfam.prtfam
+                                               left
+                                               join cstmst
+                                                 on pckwrk_view.rtcust = cstmst.cstnum
+                                               left
+                                               join adrmst
+                                                 on cstmst.adr_id = adrmst.adr_id
+                                               LEFT OUTER
+                                               JOIN (SELECT wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id,
+                                                            MIN(adddte) AS list_created,
+                                                            MIN(last_upd_dt) AS list_started,
+                                                            MAX(last_upd_dt) AS list_completed,
+                                                            SUM(pckqty) AS picks_per_list
+                                                       FROM pckwrk_view
+                                                      WHERE wrktyp = 'P'
+                                                        AND adddte >= @run_from_date
+                                                        AND adddte <= @run_till_date
+                                                        AND wh_id = 'wh_id_identifier'
+                                                      GROUP BY wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id) pckwrk_view_group
+                                                 ON pckwrk_view.client_id = pckwrk_view_group.client_id
+                                                AND pckwrk_view.wh_id = pckwrk_view_group.wh_id
+                                                AND pckwrk_view.schbat = pckwrk_view_group.schbat
+                                                AND pckwrk_view.prtnum = pckwrk_view_group.prtnum
+                                                AND pckwrk_view.srcloc = pckwrk_view_group.srcloc
+                                                AND pckwrk_view.list_id = pckwrk_view_group.list_id
+                                              WHERE pckwrk_view.wrktyp = 'P'
+                                                AND pckwrk_view.adddte >= @run_from_date
+                                                AND pckwrk_view.adddte <= @run_till_date
+                                                AND pckwrk_view.wh_id = 'wh_id_identifier'
+                                                AND prtfam.prtfamgrp = 'part_family_group_identifier'
+                                              GROUP BY pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal)
+                                      order by 1,
+                                            2,
+                                            4,
+                                            3)
+                              WHERE PART_TYPE = 'type1'
+                              group by GROUPING SETS((part_type, pallet_QTY), ('TOTAL')))
+                      ORDER BY 1 ASC)
+ select part_type,
+        pallet_qty,
+        units_picked
+   from (SELECT case when pallet_qty = '--------' then 2
+                     else 1
+                end as sort_by_clause,
+                PART_TYPE,
+                PALLET_QTY,
+                UNITS_PICKED || ' ' as units_picked
+           FROM MAIN_QUERY
+          WHERE PALLET_QTY IN ('Full Pallet', 'Less than a Pallet', '--------')
+         UNION
+         SELECT 3 as sort_by_clause,
+                MQ1.PART_TYPE,
+                MQ1.PALLET_QTY,
+                round(MQ1.UNITS_PICKED*100 / mq2.units_picked, 3) || ' %' units_picked
+           FROM MAIN_QUERY MQ1,
+                MAIN_QUERY MQ2
+          WHERE mq1.part_type <> mq2.part_type
+            and mq1.part_type = 'type1'
+            and mq2.part_type = 'TOTAL'
+            AND mq1.PALLET_QTY IN ('Full Pallet', 'Less than a Pallet')
+          order by 1,
+                2)] >> type1_Summary
+|
+[with main_query as (SELECT NVL(part_type, 'TOTAL') part_type,
+                            NVL(pallet_QTY, '--------') pallet_QTY,
+                            units_picked
+                       FROM (select part_type,
+                                    pallet_QTY,
+                                    sum(units_picked) units_picked
+                               from (SELECT schbat,
+                                            list_id,
+                                            prtnum,
+                                            srcloc,
+                                            oprcod,
+                                            pcksts,
+                                            pckqty,
+                                            pckqty units_picked,
+                                            adrnam,
+                                            untpal,
+                                            CASE WHEN (PRTNUM LIKE '%identifier1%' OR PRTNUM LIKE '%identifier2%' OR PRTNUM LIKE '%identifier3%') THEN 'type1'
+                                                 WHEN (PRTNUM LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type2'
+                                                 WHEN (PRTNUM not LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type3'
+                                                 ELSE 'UNKNOWN'
+                                            END AS part_type,
+                                            CASE WHEN pick_type = 'Pallet Pick' THEN 'Full Pallet'
+                                                 ELSE 'Less than a Pallet'
+                                            END AS pallet_qty
+                                       FROM (SELECT pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    SUM(pckwrk_view.pckqty) AS pckqty,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal,
+                                                    CASE WHEN pckwrk_view_group.picks_per_list < prtftp_view.untpal THEN 'Each Pick'
+                                                         WHEN pckwrk_view_group.picks_per_list = prtftp_view.untpal THEN 'Pallet Pick'
+                                                         ELSE 'Unknown Pick Type'
+                                                         -- Added ELSE clause
+
+                                                    END AS pick_type
+                                               FROM pckwrk_view
+                                               LEFT
+                                               JOIN prtftp_view
+                                                 ON pckwrk_view.wh_id = prtftp_view.wh_id
+                                                AND pckwrk_view.prtnum = prtftp_view.prtnum
+                                                AND pckwrk_view.prt_client_id = prtftp_view.prt_client_id
+                                               LEFT
+                                               JOIN prtmst
+                                                 ON prtftp_view.prtnum = prtmst.prtnum
+                                                AND prtftp_view.wh_id = prtmst.wh_id_tmpl
+                                                AND prtftp_view.prt_client_id = prtmst.prt_client_id
+                                               LEFT
+                                               JOIN prtfam
+                                                 ON prtmst.prtfam = prtfam.prtfam
+                                               left
+                                               join cstmst
+                                                 on pckwrk_view.rtcust = cstmst.cstnum
+                                               left
+                                               join adrmst
+                                                 on cstmst.adr_id = adrmst.adr_id
+                                               LEFT OUTER
+                                               JOIN (SELECT wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id,
+                                                            MIN(adddte) AS list_created,
+                                                            MIN(last_upd_dt) AS list_started,
+                                                            MAX(last_upd_dt) AS list_completed,
+                                                            SUM(pckqty) AS picks_per_list
+                                                       FROM pckwrk_view
+                                                      WHERE wrktyp = 'P'
+                                                        AND adddte >= @run_from_date
+                                                        AND adddte <= @run_till_date
+                                                        AND wh_id = 'wh_id_identifier'
+                                                      GROUP BY wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id) pckwrk_view_group
+                                                 ON pckwrk_view.client_id = pckwrk_view_group.client_id
+                                                AND pckwrk_view.wh_id = pckwrk_view_group.wh_id
+                                                AND pckwrk_view.schbat = pckwrk_view_group.schbat
+                                                AND pckwrk_view.prtnum = pckwrk_view_group.prtnum
+                                                AND pckwrk_view.srcloc = pckwrk_view_group.srcloc
+                                                AND pckwrk_view.list_id = pckwrk_view_group.list_id
+                                              WHERE pckwrk_view.wrktyp = 'P'
+                                                AND pckwrk_view.adddte >= @run_from_date
+                                                AND pckwrk_view.adddte <= @run_till_date
+                                                AND pckwrk_view.wh_id = 'wh_id_identifier'
+                                                AND prtfam.prtfamgrp = 'part_family_group_identifier'
+                                              GROUP BY pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal)
+                                      order by 1,
+                                            2,
+                                            4,
+                                            3)
+                              WHERE PART_TYPE = 'type2'
+                              group by GROUPING SETS((part_type, pallet_QTY), ('TOTAL')))
+                      ORDER BY 1 ASC)
+ select part_type,
+        pallet_qty,
+        units_picked
+   from (SELECT case when pallet_qty = '--------' then 2
+                     else 1
+                end as sort_by_clause,
+                PART_TYPE,
+                PALLET_QTY,
+                UNITS_PICKED || ' ' as units_picked
+           FROM MAIN_QUERY
+          WHERE PALLET_QTY IN ('Full Pallet', 'Less than a Pallet', '--------')
+         UNION
+         SELECT 3 AS SORT_BY_CLAUSE,
+                MQ1.PART_TYPE,
+                MQ1.PALLET_QTY,
+                round(MQ1.UNITS_PICKED*100 / mq2.units_picked, 3) || ' %' units_picked
+           FROM MAIN_QUERY MQ1,
+                MAIN_QUERY MQ2
+          WHERE mq1.part_type <> mq2.part_type
+            and mq1.part_type = 'type2'
+            and mq2.part_type = 'TOTAL'
+            AND mq1.PALLET_QTY IN ('Full Pallet', 'Less than a Pallet'))
+  order by 1,
+        2] >> type2_Summary
+|
+[with main_query as (SELECT NVL(pallet_QTY, '--------') pallet_QTY,
+                            units_picked
+                       FROM (select pallet_QTY,
+                                    sum(units_picked) units_picked
+                               from (SELECT schbat,
+                                            list_id,
+                                            prtnum,
+                                            srcloc,
+                                            oprcod,
+                                            pcksts,
+                                            pckqty,
+                                            pckqty units_picked,
+                                            adrnam,
+                                            untpal,
+                                            CASE WHEN (PRTNUM LIKE '%identifier1%' OR PRTNUM LIKE '%identifier2%' OR PRTNUM LIKE '%identifier3%') THEN 'type1'
+                                                 WHEN (PRTNUM LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type2'
+                                                 WHEN (PRTNUM not LIKE 'identifier4%' AND (PRTNUM LIKE '%identifier5%' OR PRTNUM LIKE '%identifier9%' OR PRTNUM LIKE '%identifier8%')) THEN 'type3'
+                                                 ELSE 'UNKNOWN'
+                                            END AS part_type,
+                                            CASE WHEN pick_type = 'Pallet Pick' THEN 'Full Pallet'
+                                                 ELSE 'Less than a Pallet'
+                                            END AS pallet_qty
+                                       FROM (SELECT pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    SUM(pckwrk_view.pckqty) AS pckqty,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal,
+                                                    CASE WHEN pckwrk_view_group.picks_per_list < prtftp_view.untpal THEN 'Each Pick'
+                                                         WHEN pckwrk_view_group.picks_per_list = prtftp_view.untpal THEN 'Pallet Pick'
+                                                         ELSE 'Unknown Pick Type'
+                                                         -- Added ELSE clause
+
+                                                    END AS pick_type
+                                               FROM pckwrk_view
+                                               LEFT
+                                               JOIN prtftp_view
+                                                 ON pckwrk_view.wh_id = prtftp_view.wh_id
+                                                AND pckwrk_view.prtnum = prtftp_view.prtnum
+                                                AND pckwrk_view.prt_client_id = prtftp_view.prt_client_id
+                                               LEFT
+                                               JOIN prtmst
+                                                 ON prtftp_view.prtnum = prtmst.prtnum
+                                                AND prtftp_view.wh_id = prtmst.wh_id_tmpl
+                                                AND prtftp_view.prt_client_id = prtmst.prt_client_id
+                                               LEFT
+                                               JOIN prtfam
+                                                 ON prtmst.prtfam = prtfam.prtfam
+                                               left
+                                               join cstmst
+                                                 on pckwrk_view.rtcust = cstmst.cstnum
+                                               left
+                                               join adrmst
+                                                 on cstmst.adr_id = adrmst.adr_id
+                                               LEFT OUTER
+                                               JOIN (SELECT wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id,
+                                                            MIN(adddte) AS list_created,
+                                                            MIN(last_upd_dt) AS list_started,
+                                                            MAX(last_upd_dt) AS list_completed,
+                                                            SUM(pckqty) AS picks_per_list
+                                                       FROM pckwrk_view
+                                                      WHERE wrktyp = 'P'
+                                                        AND adddte >= @run_from_date
+                                                        AND adddte <= @run_till_date
+                                                        AND wh_id = 'wh_id_identifier'
+                                                      GROUP BY wh_id,
+                                                            client_id,
+                                                            schbat,
+                                                            prtnum,
+                                                            srcloc,
+                                                            list_id) pckwrk_view_group
+                                                 ON pckwrk_view.client_id = pckwrk_view_group.client_id
+                                                AND pckwrk_view.wh_id = pckwrk_view_group.wh_id
+                                                AND pckwrk_view.schbat = pckwrk_view_group.schbat
+                                                AND pckwrk_view.prtnum = pckwrk_view_group.prtnum
+                                                AND pckwrk_view.srcloc = pckwrk_view_group.srcloc
+                                                AND pckwrk_view.list_id = pckwrk_view_group.list_id
+                                              WHERE pckwrk_view.wrktyp = 'P'
+                                                AND pckwrk_view.adddte >= @run_from_date
+                                                AND pckwrk_view.adddte <= @run_till_date
+                                                AND pckwrk_view.wh_id = 'wh_id_identifier'
+                                                AND prtfam.prtfamgrp = 'part_family_group_identifier'
+                                              GROUP BY pckwrk_view.schbat,
+                                                    pckwrk_view.list_id,
+                                                    pckwrk_view.prtnum,
+                                                    pckwrk_view.srcloc,
+                                                    pckwrk_view.oprcod,
+                                                    pckwrk_view.pcksts,
+                                                    adrmst.adrnam,
+                                                    pckwrk_view_group.picks_per_list,
+                                                    prtftp_view.untpal)
+                                      order by 1,
+                                            2,
+                                            4,
+                                            3)
+                              WHERE PART_TYPE in ('type1', 'type3', 'type2')
+                              group bY pallet_QTY)
+                      ORDER BY 1 ASC),
+        SECONDARY_QUERY AS (SELECT SUM(UNITS_PICKED) UNITS_PICKED
+                              FROM MAIN_QUERY)
+ select pallet_qty,
+        units_picked
+   from (SELECT 1 AS SORT_BY_CLAUSE,
+                PALLET_QTY,
+                SUM(UNITS_PICKED) || ' ' UNITS_PICKED
+           FROM MAIN_QUERY
+          GROUP BY PALLET_QTY
+         union all
+         SELECT 2 as SORT_BY_CLAUSE,
+                'TOTAL' as PALLET_QTY,
+                SUM(UNITS_PICKED) || ' ' UNITS_PICKED
+           FROM MAIN_QUERY
+         union all
+         select 3 as sort_by_clause,
+                mq1.pallet_qty,
+                round(sum(mq1.UNITS_PICKED) *100 / sum(sq.units_picked), 3) || ' %'
+           from main_query mq1,
+                secondary_query sq
+          where 1 = 1
+          group by mq1.pallet_qty)
+  order by 1 asc] >> type3_type1_type2_Combined_Summary
+|
+expand environment variable
+ where name = '$LESDIR'
+|
+publish data
+ where path = @value || '/temp/'
+|
+publish data
+ where file1 = 'Detailed Breakdown.csv'
+   and file2 = 'type3_Summary.csv'
+   and file3 = 'type1_Summary.csv'
+   and file4 = 'type2_Summary.csv'
+   and file5 = 'type3_type1_type2_Combined_Summary.csv'
+|
+remove file
+ where filnam = @path || @file1 catch(@?)
+|
+remove file
+ where filnam = @path || @file2 catch(@?)
+|
+remove file
+ where filnam = @path || @file3 catch(@?)
+|
+remove file
+ where filnam = @path || @file4 catch(@?)
+|
+remove file
+ where filnam = @path || @file5 catch(@?)
+|
+write csv file
+ where path = @path
+   and filnam = @file1
+   and resData = @Detailed_Breakdown
+|
+write csv file
+ where path = @path
+   and filnam = @file2
+   and resData = @type3_Summary
+|
+write csv file
+ where path = @path
+   and filnam = @file3
+   and resData = @type1_Summary
+|
+write csv file
+ where path = @path
+   and filnam = @file4
+   and resData = @type2_Summary
+|
+write csv file
+ where path = @path
+   and filnam = @file5
+   and resData = @type3_type1_type2_Combined_Summary
+|
+publish data
+ where attachments = @path || @file1 || ',' || @file1 || ';' || @path || @file2 || ',' || @file2 || ';' || @path || @file3 || ',' || @file3 || ';' || @path || @file4 || ',' || @file4 || ';' || @path || @file5 || ',' || @file5
+|
+publish data
+ where mstype3 = 'The information contained in this report has been produced by an automated system, please do not reply to this mail.'
+   and mstype1 = 'The Attached details the Pallet Quantities report.'
+|
+[select rtstr1 smtp_server
+   from poldat
+  where polcod = 'polcod_identifier1'
+    AND polvar = 'polvar_identifier1'
+    AND polval = 'polval_identifier1']
+|
+[select distinct rtstr1 as stemail
+   from poldat
+  where polcod = 'polcod_identifier2'
+    AND polvar = 'polvar_identifier2'
+    AND polval = 'polval_identifier2'] >> res
+|
+convert column results to string
+ where colnam = 'stemail'
+   and res = @res
+   and separator = ';'
+|
+publish data
+ where line_feed_char = 'CHR(10)'
+|
+[select @line_feed_char:raw line_feed
+   from dual]
+|
+send email
+ where from = 'sender@random_email.com'
+   and to = @result_string
+   and subject = 'Pallet quantities report ' || @from_date || ' <> ' || @till_date
+   and attachment = @attachments
+   and msg = @mstype3 || @line_feed || @mstype1
+   and hostname = @smtp_server
