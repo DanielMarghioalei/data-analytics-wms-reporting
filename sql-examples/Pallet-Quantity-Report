@@ -1,3 +1,4 @@
+[
 --Purpose of the report:
 --1. Present to business 5 attachements with the summary based on part types
 --2. Part type to be determined based on the item number
@@ -9,7 +10,7 @@
 --2. Any lists for less than the qty against the item footprints for Pallet qty will be treated as less than a pallet
 --3. Work assignment rules are configured to have break values equal to the pallet qty for the item number (normally at a part family level - XYZ part family has qty of 18 for Pallet UOM)
 
-[select trunc(sysdate -6) run_from_date,
+select trunc(sysdate -6) run_from_date,
         trunc(sysdate) run_till_date,
         to_char(sysdate -6, 'dd.mm.yyyy') from_date,
         to_char(sysdate, 'dd.mm.yyyy') till_date
