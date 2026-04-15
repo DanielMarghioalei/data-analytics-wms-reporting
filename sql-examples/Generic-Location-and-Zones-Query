@@ -1,0 +1,47 @@
+/*Created by D.Marghioalei
+/*Puprose of this query is to list all locations and zones for any BY WMS instance*/
+
+[SELECT locmst.stoloc,
+        locmst.aisle_id,
+        locmst.arecod area_code,
+        wrk_dsc.lngdsc work_zone,
+        sto_dsc.lngdsc storage_zone,
+        pck_dsc.lngdsc pick_zone,
+        mov_dsc.lngdsc movement_zone,
+        cnt_dsc.lngdsc count_zone
+   FROM locmst
+   left
+   join zonmst
+     on locmst.wrk_zone_id = zonmst.wrk_zone_id
+   left
+   join dscmst wrk_dsc
+     on zonmst.wrkzon || '|' || zonmst.wh_id = wrk_dsc.colval
+   left
+   join pck_zone
+     on locmst.pck_zone_id = pck_zone.pck_zone_id
+   left
+   join dscmst pck_dsc
+     on pck_zone.pck_zone_cod || '|' || pck_zone.wh_id = pck_dsc.colval
+   left
+   join sto_zone
+     on locmst.sto_zone_id = sto_zone.sto_zone_id
+   left
+   join dscmst sto_dsc
+     on sto_dsc.colval = sto_zone.sto_zone_cod || '|' || sto_zone.wh_id
+   left
+   join mov_zone
+     on locmst.mov_zone_id = mov_zone.mov_zone_id
+   left
+   join dscmst mov_dsc
+     on mov_dsc.colval = mov_zone.mov_zone_cod || '|' || mov_zone.wh_id
+   left
+   join cntzon
+     on locmst.cnt_zone_id = cntzon.cnt_zone_id
+   left
+   join dscmst cnt_dsc
+     on cnt_dsc.colval = cntzon.cnt_zone_cod || '|' || cntzon.wh_id
+  where 1 = 1
+ --and locmst.ins_dt > trunc(sysdate -10) --look by added date
+ --and locmst.stoloc like 'GF%' --search by location ID or parts of the location id
+ --and locmst.aisle_id = 'GF' --search by aisle id
+    ];
