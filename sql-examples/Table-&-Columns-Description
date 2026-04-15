@@ -1,0 +1,29 @@
+/*Created by D.Marghioalei*/
+/*Puspose of the query is to list table and column description for tables and/or columns - can use either table, or column, or both for the identifiers (comment the line you're not using) */
+/*use this query if you dont want to use the "list table columns" MOCA Command*/
+[select all_tab_cols.owner,
+        user_tab_comments.table_name,
+        user_tab_comments.table_type object_type,
+        user_tab_comments.comments object_description,
+        user_col_comments.column_name,
+        user_col_comments.comments column_description,
+        all_tab_cols.column_id,
+        all_tab_cols.nullable,
+        all_tab_cols.data_length data_length_bytes,
+        all_tab_cols.data_type,
+        all_tab_cols.hidden_column
+   from user_tab_comments
+   left
+   join user_col_comments
+     on user_tab_comments.table_name = user_col_comments.table_name
+   left
+   join all_tab_cols
+     on user_tab_comments.table_name = all_tab_cols.table_name
+    and user_col_comments.column_name = all_tab_cols.column_name
+  where 1 = 1
+    and user_tab_comments.table_name = upper('your_table_name_here')
+    and user_col_comments.column_name = upper('your_column_name_name_here')
+    order by 1,
+        2,
+        3,
+        7];
