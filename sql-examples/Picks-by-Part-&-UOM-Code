@@ -1,0 +1,44 @@
+/*This was written considering that the instance is using basic UOM Codes - each, case, pallet*/
+/*To include other UOMs (PC - Piece) change the lines 8-11 to reflect your instance*/
+/*Improvements can be made: add another join for dscmst table on pckwrk_view.pck_uom = dscmst.colval and thus replace the Functions in line 8 with dscmst.lngdsc*/
+[select dscmst.lngdsc,
+        pckwrk_view.prtnum,
+        PRTFTP_VIEW.UNTCAS UNITS_PER_CASE,
+        PRTFTP_VIEW.UNTPAL UNITS_PER_PALLET,
+        NVL(replace(replace(replace(pckwrk_view.pck_uom, 'EA', 'EACH PICK'), 'CS', 'CASE PICK'), 'PA', 'PALLET PICK'), 'N/A') PICK_UOM_CODE,
+        decode(pckwrk_view.oprcod, 'PCK', '', decode(pckwrk_view.pck_uom, 'EA', pckwrk_view.pckqty, '')) EACHES,
+        decode(pckwrk_view.oprcod, 'PCK', '', decode(pckwrk_view.pck_uom, 'CS', pckwrk_view.pckqty / PRTFTP_VIEW.UNTCAS, '')) CASES,
+        decode(dscmst2.lngdsc, 'Pallet Pick', 1, '') PALLETS,
+        pckwrk_view.pckqty units_picked,
+        pckwrk_view.schbat,
+        pckwrk_view.pckdte,
+        to_char(pckwrk_view.pckdte, 'DD/MM/YYYY HH24:MI:SS') pick_date,
+        DSCMST2.LNGDSC OPERATION_CODE,
+        pckwrk_view.ordnum,
+        to_char(pckwrk_view.adddte, 'DD/MM/YYYY HH24:MI:SS') allocation_date,
+        to_char(ORD.adddte, 'DD/MM/YYYY HH24:MI:SS') ORDER_DATE
+   from pckwrk_view
+   left
+   join prtftp_view
+     on pckwrk_view.prtnum = prtftp_view.prtnum
+    and pckwrk_view.prt_client_id = prtftp_view.prt_client_id
+    and pckwrk_view.ftpcod = prtftp_view.ftpcod
+   LEFT
+   JOIN ord
+     ON ORD.ordnum = PCKWRK_VIEW.ordnum
+    AND ORD.client_id = PCKWRK_VIEW.client_id
+    and ORD.client_id = pckwrk_view.prt_client_id
+   left
+   join dscmst dscmst2
+     on pckwrk_view.oprcod || '|' || pckwrk_view.wh_id = dscmst2.colval
+    and dscmst2.colnam = 'oprcod|wh_id_tmpl'
+   left
+   join dscmst
+     on pckwrk_view.pcksts = dscmst.colval
+    and dscmst.colnam = 'pcksts'
+  where pckwrk_view.wrktyp = 'P'
+    AND pckwrk_view.pcksts = 'C'
+    AND pckwrk_view.pckdte > TRUNC(sysdate -2)
+ --AND ORD.client_id = '*YOUR CLIENT*'
+
+  order by 11 desc];
