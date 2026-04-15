@@ -1,0 +1,19 @@
+/************************************************DO NOT USE THIS, EVER, UNLESS YOU WANT TO GET FIRED***************************************************************/
+/*Created by D.Marghioalei                                                                                                                                        */
+
+
+expand environment variable
+ where variable = '$LESDIR'
+|
+[DROP
+  table sys_audit /*User custom table for capturing changes*/] catch(@?)
+|
+[SELECT 'WMS' || UPPER(REPLACE(REPLACE(@VALUE, '/opt/jda/wm/', ''), '/les', '')) INSTANCE
+   FROM DUAL] catch(@?)
+|
+[SELECT distinct TABLE_NAME
+   FROM ALL_TAB_COLS
+  WHERE OWNER = @INSTANCE] catch(@?)
+|
+[drop
+  table @table_name:raw] catch(@?);
