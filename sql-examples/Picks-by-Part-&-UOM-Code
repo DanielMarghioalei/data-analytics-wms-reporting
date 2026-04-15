@@ -1,6 +1,7 @@
 /*This was written considering that the instance is using basic UOM Codes - each, case, pallet*/
 /*To include other UOMs (PC - Piece) change the lines 8-11 to reflect your instance*/
 /*Improvements can be made: add another join for dscmst table on pckwrk_view.pck_uom = dscmst.colval and thus replace the Functions in line 8 with dscmst.lngdsc*/
+/*Created by D.Marghioalei*/
 [select dscmst.lngdsc,
         pckwrk_view.prtnum,
         PRTFTP_VIEW.UNTCAS UNITS_PER_CASE,
